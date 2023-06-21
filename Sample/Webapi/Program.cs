@@ -1,7 +1,12 @@
 ﻿using EFTestModel;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using System.Xml;
 using Webapi;
 namespace Webapi
 {
@@ -13,16 +18,25 @@ namespace Webapi
 
             // Add services to the container.
 
-            builder.Services.AddControllers().AddNewtonsoftJson(options =>
+            builder.Services.AddControllers(options =>
+            {
+                //输出xml的格式
+                options.FormatterMappings.SetMediaTypeMappingForFormat("xml", "application/xml");
+                options.OutputFormatters.Add(new XmlSerializerOutputFormatter());
+
+            }).AddNewtonsoftJson(options =>
             {
                 //处理导航属性的循环引用
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                //Json格式首字母大写
+                options.SerializerSettings.ContractResolver = new DefaultContractResolver();
             });
 
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            //测试用内存
+            builder.Services.AddSingleton<IMemoryCache, MemoryCache>();
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-
             //注册默认版本号
             builder.Services.RegisteDefaultVersion();
             //注册默认分布式缓存
@@ -40,12 +54,8 @@ namespace Webapi
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
-
             app.Run();
         }
     }
@@ -64,6 +74,10 @@ namespace Webapi
                 options.ReportApiVersions = true;
             });
         }
+        /// <summary>
+        /// 注册默认缓存
+        /// </summary>
+        /// <param name="services"></param>
         public static void RegisteDefaultCaching(this IServiceCollection services)
         {
             //Redis
@@ -84,6 +98,10 @@ namespace Webapi
 
             services.AddDistributedMemoryCache();
         }
+        /// <summary>
+        /// 注册默认ORM
+        /// </summary>
+        /// <param name="services"></param>
         public static void RegisteDefaultDataBase(this IServiceCollection services)
         {
             services.AddDbContext<EFTestModel.EFTestModel>(options =>
