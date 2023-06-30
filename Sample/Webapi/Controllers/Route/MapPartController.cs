@@ -31,7 +31,7 @@ namespace Webapi.Controllers.Route
         {
             return body;
         }
-        //api/MapPart/1 body
+        //api/MapPart/detail/1 body
         [HttpPost("detail/{id}")]
         public ActionResult Post([FromBody] Body body, [FromRoute] int id)
         {

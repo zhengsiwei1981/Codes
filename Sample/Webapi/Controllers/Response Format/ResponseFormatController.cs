@@ -8,6 +8,15 @@ namespace Webapi.Controllers.Response_Format
     [FormatFilter]
     public class ResponseFormatController : ControllerBase
     {
+        /// <summary>
+        /// ProducesResponseType应用于存在多个相应类型时
+        /// Produces固定相应的文本类型
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [Produces("application/xml")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [HttpGet("{id:long}")]
         public IActionResult Ok(long id)
         {
