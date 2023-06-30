@@ -1,0 +1,139 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{84CDB557-434F-4A1E-BD89-7499248D2B4C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>GJS.Service.Approval</RootNamespace>
+    <AssemblyName>GJS.Service.Approval</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Action\ArtificialNodeAction.cs" />
+    <Compile Include="Action\AutoNodeAction.cs" />
+    <Compile Include="Action\EmployeeService.cs" />
+    <Compile Include="Action\EndPointNodeAction.cs" />
+    <Compile Include="Action\FailNodeAction.cs" />
+    <Compile Include="Action\PositionNodeAction.cs" />
+    <Compile Include="Action\TriggerPointNodeAction.cs" />
+    <Compile Include="ApprovalArray\ApprovalArray.cs" />
+    <Compile Include="ApprovalArray\ApprovalPerson.cs" />
+    <Compile Include="ApprovalArray\ApprovalPosition.cs" />
+    <Compile Include="ApprovalBaseService.cs" />
+    <Compile Include="ApprovalContext.cs" />
+    <Compile Include="ApprovalObject.cs" />
+    <Compile Include="ApprovalResult.cs" />
+    <Compile Include="ApprovalService.cs" />
+    <Compile Include="Attribute\NodeActionTypeAttribute.cs" />
+    <Compile Include="Attribute\NodeSubordinateAttribute.cs" />
+    <Compile Include="Attribute\RefResourceAttribute.cs" />
+    <Compile Include="Comment\ObjectComments.cs" />
+    <Compile Include="Condation\AssemblyCondationBlock.cs" />
+    <Compile Include="Condation\FieldCondationBlock.cs" />
+    <Compile Include="Condation\SqlCondationBlock.cs" />
+    <Compile Include="Flow\ApprovalFlow.cs" />
+    <Compile Include="Interface\IApprovalDetail.cs" />
+    <Compile Include="Interface\IApprovalObject.cs" />
+    <Compile Include="Interface\IAssemblyCondation.cs" />
+    <Compile Include="Interface\ICancellation.cs" />
+    <Compile Include="Interface\ICondationBlock.cs" />
+    <Compile Include="Interface\ICreateApprovalObject.cs" />
+    <Compile Include="Interface\INodeAction.cs" />
+    <Compile Include="Interface\IRefResourceProvider.cs" />
+    <Compile Include="ObjectReleation\ApprovalPersonNodeReleation.cs" />
+    <Compile Include="ObjectReleation\ObjectNodeReleation.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PropertyValueProvider\DefaultValueProvider.cs" />
+    <Compile Include="Tree\ApprovalTree.cs" />
+    <Compile Include="Tree\PositionTreeNode.cs" />
+    <Compile Include="Tree\ArtificialTreeNode.cs" />
+    <Compile Include="Tree\AutoTreeNode.cs" />
+    <Compile Include="Tree\EndPointTreeNode.cs" />
+    <Compile Include="Tree\FailTreeNode.cs" />
+    <Compile Include="Tree\TreeGraphical.cs" />
+    <Compile Include="Tree\TreeNode.cs" />
+    <Compile Include="Tree\TriggerPointTreeNode.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GJS.Data.Base\GJS.Data.Base.csproj">
+      <Project>{ac09f0cf-5625-4892-853a-58ac83714763}</Project>
+      <Name>GJS.Data.Base</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GJS.Data.BasicData\GJS.Data.BasicData.csproj">
+      <Project>{1ee8d055-0feb-407d-9159-39a91f8e3d86}</Project>
+      <Name>GJS.Data.BasicData</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GJS.Entity.Base\GJS.Entity.Base.csproj">
+      <Project>{8C403D8B-01F4-45CC-A0CC-AC95EA3442F6}</Project>
+      <Name>GJS.Entity.Base</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GJS.Infrastructure.CommonModel\GJS.Infrastructure.CommonModel.csproj">
+      <Project>{C2653927-C14C-4D0B-B692-BAE5592F9267}</Project>
+      <Name>GJS.Infrastructure.CommonModel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GJS.Infrastructure.Enum\GJS.Infrastructure.Enum.csproj">
+      <Project>{C24015EC-277D-4E4E-B764-AB47ADFA81E0}</Project>
+      <Name>GJS.Infrastructure.Enum</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GJS.Infrastructure.Utility\GJS.Infrastructure.Utility.csproj">
+      <Project>{4f629848-494e-451a-9c40-4c83677f5bc3}</Project>
+      <Name>GJS.Infrastructure.Utility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GJS.Service.Base\GJS.Service.Base.csproj">
+      <Project>{7ca42a24-9746-4e49-a9f6-e299e0339f67}</Project>
+      <Name>GJS.Service.Base</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GJS.Service.BasicData\GJS.Service.BasicData.csproj">
+      <Project>{fac013f1-ced6-4c34-a282-89946957179b}</Project>
+      <Name>GJS.Service.BasicData</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GJS.Service.BasicManage\GJS.Service.BasicManage.csproj">
+      <Project>{2089c517-7cce-4491-a6ff-fe393a463da0}</Project>
+      <Name>GJS.Service.BasicManage</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GJS.Service.Message\GJS.Service.Message.csproj">
+      <Project>{863DAAC1-9826-4382-B919-06F7B204027B}</Project>
+      <Name>GJS.Service.Message</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
