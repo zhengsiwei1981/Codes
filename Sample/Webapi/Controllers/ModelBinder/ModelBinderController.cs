@@ -100,6 +100,7 @@ namespace Webapi.Controllers.ModelBinder
         [HttpPost("File")]
         public string GetFileName(IFormFile formFile)
         {
+       
             return formFile.FileName;
         }
     }

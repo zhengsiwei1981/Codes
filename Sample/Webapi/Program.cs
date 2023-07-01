@@ -24,7 +24,7 @@ namespace Webapi
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            
+
             builder.Services.AddControllers(options =>
             {
                 //输出xml的格式
@@ -34,7 +34,7 @@ namespace Webapi
                 //写入自定义格式
                 options.InputFormatters.Insert(0, new MyTestInputFormatter());
                 options.OutputFormatters.Insert(0, new MyTestOutputFormatter());
-
+                
                 //添加异常过滤
                 //options.Filters.Add<HttpResponseExceptionFilter>();
 
@@ -44,6 +44,8 @@ namespace Webapi
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
                 //Json格式首字母大写
                 options.SerializerSettings.ContractResolver = new DefaultContractResolver();
+                //自定义转换器
+                options.SerializerSettings.Converters.Add(new Webapi.Controllers.ModelBinder.DateTimeConverter());
             });
 
             //测试用内存
