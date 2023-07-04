@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -34,7 +35,8 @@ namespace Webapi
                 //写入自定义格式
                 options.InputFormatters.Insert(0, new MyTestInputFormatter());
                 options.OutputFormatters.Insert(0, new MyTestOutputFormatter());
-                
+
+                //options.ModelBinderProviders.Insert(0, new ByteArrayModelBinderProvider());
                 //添加异常过滤
                 //options.Filters.Add<HttpResponseExceptionFilter>();
 
