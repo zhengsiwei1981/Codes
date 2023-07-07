@@ -6,11 +6,14 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System.IO.Abstractions;
 using System.Text;
+using System.Web.Http.ModelBinding;
 using System.Xml;
 using Webapi;
 using Webapi.Controllers.HandlerError;
@@ -35,13 +38,15 @@ namespace Webapi
                 //写入自定义格式
                 options.InputFormatters.Insert(0, new MyTestInputFormatter());
                 options.OutputFormatters.Insert(0, new MyTestOutputFormatter());
-
+                options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(s => "值不能为空");
                 //options.ModelBinderProviders.Insert(0, new ByteArrayModelBinderProvider());
                 //添加异常过滤
-                //options.Filters.Add<HttpResponseExceptionFilter>();
+                options.Filters.Add<HttpResponseExceptionFilter>();
 
             }).AddNewtonsoftJson(options =>
             {
+                //设置日期格式
+                options.SerializerSettings.DateFormatString = "yyyy-MM-dd";
                 //处理导航属性的循环引用
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
                 //Json格式首字母大写
@@ -50,8 +55,32 @@ namespace Webapi
                 options.SerializerSettings.Converters.Add(new Webapi.Controllers.ModelBinder.DateTimeConverter());
             });
 
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                //禁用默认的无效模型响应器,否则自定义的模型验证将不会起效
+                //options.SuppressModelStateInvalidFilter = true;
+
+                //自定义无效模型响应
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var sb = new StringBuilder();
+                    foreach (var key in context.ModelState.Keys)
+                    {
+                        if (context.ModelState[key].Errors.Count > 0)
+                        {
+                            sb.Append(context.ModelState[key].Errors[0].ErrorMessage);
+                            sb.Append(",");
+                        }
+                    }
+                    sb = sb.Remove(sb.Length - 1, 1);
+                    return new JsonResult(new { message = $"无效的参数:{sb.ToString()}" });
+                };
+            });
             //测试用内存
             builder.Services.AddSingleton<IMemoryCache, MemoryCache>();
+            builder.Services.AddSingleton<IFileSystem, FileSystem>();
+            //注册中间件
+            //builder.Services.AddSingleton<IMiddleware, RequestFileMiddleware>();
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -102,6 +131,7 @@ namespace Webapi
             app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();
+            //app.UseRequestFileMiddleware();
             app.Run();
         }
     }
@@ -267,5 +297,41 @@ namespace Webapi
             });
         }
     }
+    public class RequestFileMiddleware
+    {
+        private readonly RequestDelegate _next;
 
+        public RequestFileMiddleware(RequestDelegate next)
+        {
+            _next = next;
+        }
+        public async Task InvokeAsync(HttpContext context)
+        {
+            var fileSystem = context.RequestServices.GetRequiredService<IFileSystem>();
+            var fileInfo = fileSystem.FileInfo.New(Path.Combine(Directory.GetCurrentDirectory(), "1.txt"));
+
+            var sb = new StringBuilder();
+            foreach (var key in context.Request.Query.Keys)
+            {                              
+                var content = context.Request.Query[key].FirstOrDefault();
+                sb.Append(content);
+                sb.Append(Environment.NewLine);
+            }
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            using var stream = fileInfo.Open(FileMode.Append);
+            stream.Write(bytes, 0, bytes.Length);
+
+            await _next(context);
+        }
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    public static class RequestFileMiddlewareUse
+    {
+        public static void UseRequestFileMiddleware(this IApplicationBuilder builder)
+        {
+            builder.UseMiddleware<RequestFileMiddleware>();
+        }
+    }
 }

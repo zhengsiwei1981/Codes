@@ -17,10 +17,11 @@ namespace Webapi.Controllers.HandlerError
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Produces("application/json")]
         public IActionResult Error()
         {
             var exceptionHandlerFeature = HttpContext.Features.Get<IExceptionHandlerFeature>()!;
-            return Problem(detail: exceptionHandlerFeature.Error.StackTrace, title: exceptionHandlerFeature.Error.Message);
+            return new JsonResult(new { message = exceptionHandlerFeature.Error.Message});
         }
         [HttpGet("Throw")]
         public IActionResult Throw()
@@ -35,12 +36,15 @@ namespace Webapi.Controllers.HandlerError
         public void OnActionExecuting(ActionExecutingContext context) { }
         public void OnActionExecuted(ActionExecutedContext context)
         {
-            context.Result = new ObjectResult(context.Exception?.Message)
+            if (context.Exception != null)
             {
-                StatusCode = StatusCodes.Status400BadRequest
-            };
+                context.Result = new ObjectResult(context.Exception?.Message)
+                {
+                    StatusCode = StatusCodes.Status400BadRequest
+                };
 
-            context.ExceptionHandled = true;
+                context.ExceptionHandled = true;
+            }
         }
     }
 }

@@ -15,8 +15,13 @@ namespace Webapi.Controllers.ModelBinder
     [ApiController]
     public class CustomModelBinderController : ControllerBase
     {
-        [HttpPost("test")]
-        public IActionResult Test([FromBody] TestObj testObj)
+        [HttpPost("Post")]
+        public IActionResult Test([FromBody][Microsoft.AspNetCore.Mvc.ModelBinder(BinderType = typeof(TestObjModelBinder))] TestObj testObj)
+        {
+            return Content($"{testObj.Foo},{testObj.Bar}");
+        }
+        [HttpGet("Get")]
+        public IActionResult Test2([FromQuery][Microsoft.AspNetCore.Mvc.ModelBinder(BinderType = typeof(TestObjModelBinder2))] TestObj testObj)
         {
             return Content($"{testObj.Foo},{testObj.Bar}");
         }
@@ -33,25 +38,49 @@ namespace Webapi.Controllers.ModelBinder
             return Ok(fileName);
         }
     }
-    [Microsoft.AspNetCore.Mvc.ModelBinder(BinderType = typeof(TestObjModelBinder))]
+
     public class TestObj
     {
-        public string Foo { get; set; }
-        public string Bar { get; set; }
+        public string? Foo { get; set; }
+        public string? Bar { get; set; }
     }
     public class TestObjModelBinder : Microsoft.AspNetCore.Mvc.ModelBinding.IModelBinder
     {
         public async Task BindModelAsync(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingContext bindingContext)
         {
+            try
+            {
+                var value = await bindingContext.ActionContext.HttpContext.Request.BodyReader.ReadAsync();
+                var s = System.Text.Encoding.UTF8.GetString(value.Buffer.ToArray());
+                var model = JsonConvert.DeserializeObject<TestObj>(s);
 
-            var value = await bindingContext.ActionContext.HttpContext.Request.BodyReader.ReadAsync();
-            var s = System.Text.Encoding.UTF8.GetString(value.Buffer.ToArray());
-            var model = JsonConvert.DeserializeObject<TestObj>(s);
+                model.Foo = model.Foo == "string" ? "default" : model.Foo;
+                model.Bar = model.Bar == "string" ? "default" : model.Bar;
 
-            model.Foo = model.Foo == "string" ? "default" : model.Foo;
-            model.Bar = model.Bar == "string" ? "default" : model.Bar;
-            //var value = valueProviderResult.FirstValue;
-            bindingContext.Result = ModelBindingResult.Success(model);
+                bindingContext.Result = ModelBindingResult.Success(model);
+            }
+            catch (Exception exception)
+            {
+                bindingContext.ModelState.TryAddModelError(
+                    bindingContext.ModelName,
+                    exception,
+                    bindingContext.ModelMetadata);
+            }
         }
     }
+    public class TestObjModelBinder2 : Microsoft.AspNetCore.Mvc.ModelBinding.IModelBinder
+    {
+        public Task BindModelAsync(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingContext bindingContext)
+        {
+            var model = Activator.CreateInstance(bindingContext.ModelType);
+            bindingContext.ModelMetadata.Properties.ToList().ForEach(p =>
+            {
+                var valueProvider = bindingContext.ValueProvider.GetValue(p.Name);
+                model.GetType().GetProperty(p.Name).SetValue(model, valueProvider.FirstValue);
+            });
+            bindingContext.Result = ModelBindingResult.Success(model);
+            return Task.CompletedTask;
+        }
+    }
+
 }
