@@ -1,0 +1,17 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" language="javascript"></script>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>   
+    <script language="javascript" type="text/javascript">
+$(document).ready(function () {
+            $.get("https://localhost:7036/api/Cors/corstest", function (data) {
+                alert(data);
+            });
+});
+    </script>
+</body>
+</html>

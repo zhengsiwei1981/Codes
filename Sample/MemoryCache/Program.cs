@@ -8,7 +8,7 @@ namespace MemoryCache
         public static void Main(string[] args)
         {
             var service = new ServiceCollection();
-            service.AddMemoryCache(options => { });
+            service.AddMemoryCache();
             service.AddSingleton<IFileProvider>(provider =>
             {
                 return new PhysicalFileProvider(Environment.CurrentDirectory);

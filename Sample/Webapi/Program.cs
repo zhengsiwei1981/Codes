@@ -4,19 +4,25 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System.Diagnostics;
 using System.IO.Abstractions;
+using System.Net;
 using System.Text;
 using System.Web.Http.ModelBinding;
 using System.Xml;
 using Webapi;
+using Webapi.Controllers.Configuration;
 using Webapi.Controllers.HandlerError;
+using Webapi.MyExtension;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace Webapi
@@ -26,9 +32,40 @@ namespace Webapi
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            //Healthy Check
+            builder.Services.SampleHealthyCheckForBuilder();
+            //Cors
+            builder.Services.SampleCorsForBuilder();
+
+            builder.Logging.AddTraceSource(new System.Diagnostics.SourceSwitch("default", "all"), new DefaultTraceListener() { LogFileName = "trace.log" }).AddEventSourceLogger();
+            //builder.Services.AddW3CLogging(options =>
+            //{
+            //    options.FileName = "MyLogFile";
+            //    options.LogDirectory = @"C:\Logs";
+            //});
+            //增加新的环境变量前缀
+            builder.Configuration.AddEnvironmentVariables("PREFIX_");
+            //交换机映射,之后可以通过configuration的索引器获取参数
+            var switchMappings = new Dictionary<string, string>()
+                     {
+                         { "--arg1", "arg1" },
+                         { "--arg2", "arg2" },
+                         { "--arg3", "arg3" }
+                     };
+            builder.Configuration.AddCommandLine(args, switchMappings);
+            //增加xml文件
+            builder.Configuration.AddXmlFile("MyXml.xml", true);
+            //增加ini文件
+            builder.Configuration.AddIniFile("MyIni.ini", true, reloadOnChange: true);
+            builder.Configuration.AddJsonFile("settings.json");
+            //变更令牌
+            //var confiuration = (IConfiguration)builder.Configuration;
+            //ChangeToken.OnChange(() => confiuration.GetReloadToken(), () =>
+            //{
+            //    Console.WriteLine("has changed");
+            //});
 
             // Add services to the container.
-
             builder.Services.AddControllers(options =>
             {
                 //输出xml的格式
@@ -54,7 +91,28 @@ namespace Webapi
                 //自定义转换器
                 options.SerializerSettings.Converters.Add(new Webapi.Controllers.ModelBinder.DateTimeConverter());
             });
+            builder.Services.Configure<PositionOptions>(builder.Configuration.GetSection("Postion"));
+            //Url重写规则
+            builder.Services.Configure<RewriteOptions>(options =>
+            {
+                //使用自定义的重写规则，除此方法外还可以使用IRule实现相同的功能
+                //options.Add(MethodRules.RewriteTextFileRequests);
 
+                options.AddRedirect("redirect-rule/(.*)", "api/Rewriter/redirected/$1");
+                //尽可能使用，因为匹配规则的计算成本很高，并且会增加应用响应时间。发生匹配时跳过对其余规则的处理，并且不需要其他规则处理
+                options.AddRewrite(@"^sample/(\d+)/(\d+)", "api/Rewriter/rewritten?var1=$1&var2=$2", skipRemainingRules: true);
+            });
+            builder.Services.AddSingleton<IFileProvider>(service =>
+            {
+                var env = service.GetRequiredService<IHostEnvironment>();
+                var logger = service.GetRequiredService<Logger<Program>>();
+                var manifestEmbeddedProvider = new ManifestEmbeddedFileProvider(typeof(Program).Assembly);
+                var physicalFileProvider = new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "TestDocument"));
+
+                return new CompositeFileProvider(physicalFileProvider, manifestEmbeddedProvider);
+            });
+
+            //定义模型规则
             builder.Services.Configure<ApiBehaviorOptions>(options =>
             {
                 //禁用默认的无效模型响应器,否则自定义的模型验证将不会起效
@@ -75,6 +133,11 @@ namespace Webapi
                     sb = sb.Remove(sb.Length - 1, 1);
                     return new JsonResult(new { message = $"无效的参数:{sb.ToString()}" });
                 };
+            });
+            //静态文件处理
+            builder.Services.AddOptions<StaticFileOptions>().Configure<IHostEnvironment>((op, env) =>
+            {
+                op.FileProvider = new TextFileProvider(env.ContentRootPath);
             });
             //测试用内存
             builder.Services.AddSingleton<IMemoryCache, MemoryCache>();
@@ -126,11 +189,23 @@ namespace Webapi
                 //    });
                 //});
             }
-            //app.UseExceptionHandler("/error");
 
+            //app.UseExceptionHandler("/error");
+            app.UseRewriter();
+            app.UseStaticFiles();
+            //添加Http日志
+            //app.UseHttpLogging();
+            //app.UseW3CLogging();
             app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();
+            //Healthy Check
+            app.SampleHealthyCheckForWebApplication();
+            //Cors
+            app.SampleCorsForWebApplication();
+            //        app.Run(context => context.Response.WriteAsync(
+            //$"Rewritten or Redirected Url: " +
+            //$"{context.Request.Path + context.Request.QueryString}"));
             //app.UseRequestFileMiddleware();
             app.Run();
         }
@@ -297,6 +372,9 @@ namespace Webapi
             });
         }
     }
+    /// <summary>
+    /// 
+    /// </summary>
     public class RequestFileMiddleware
     {
         private readonly RequestDelegate _next;
@@ -312,7 +390,7 @@ namespace Webapi
 
             var sb = new StringBuilder();
             foreach (var key in context.Request.Query.Keys)
-            {                              
+            {
                 var content = context.Request.Query[key].FirstOrDefault();
                 sb.Append(content);
                 sb.Append(Environment.NewLine);
@@ -333,5 +411,58 @@ namespace Webapi
         {
             builder.UseMiddleware<RequestFileMiddleware>();
         }
+    }
+
+    public class MethodRules
+    {
+        #region snippet_RedirectXmlFileRequests
+        public static void RedirectXmlFileRequests(RewriteContext context)
+        {
+            var request = context.HttpContext.Request;
+
+            // Because the client is redirecting back to the same app, stop 
+            // processing if the request has already been redirected.
+            if (request.Path.StartsWithSegments(new PathString("/xmlfiles")) ||
+                request.Path.Value == null)
+            {
+                return;
+            }
+
+            if (request.Path.Value.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+            {
+                var response = context.HttpContext.Response;
+                response.StatusCode = (int)HttpStatusCode.MovedPermanently;
+                context.Result = RuleResult.EndResponse;
+                response.Headers[HeaderNames.Location] =
+                    "/xmlfiles" + request.Path + request.QueryString;
+            }
+        }
+        #endregion
+
+        #region snippet_RewriteTextFileRequests
+        public static void RewriteTextFileRequests(RewriteContext context)
+        {
+            var request = context.HttpContext.Request;
+
+            if (request.Path.Value != null &&
+                request.Path.Value.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Result = RuleResult.SkipRemainingRules;
+                request.Path = "/file.txt";
+            }
+        }
+        #endregion
+    }
+
+    public class TextFileProvider : PhysicalFileProvider, IFileProvider
+    {
+        public TextFileProvider(string root) : base(root)
+        { }
+        public Microsoft.Extensions.FileProviders.IFileInfo GetFileInfo(string subpath)
+        {
+            var fileInfo = base.GetFileInfo(subpath);
+            return fileInfo;
+        }
+
     }
 }

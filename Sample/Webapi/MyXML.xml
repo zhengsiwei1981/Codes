@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <MyKey>MyXMLFile Value111</MyKey>
+  <XmlTask>
+    <Title>Title from  MyXMLFile11222</Title>
+    <Name>Name from MyXMLFile1212111141121</Name>
+  </XmlTask>
+</configuration>

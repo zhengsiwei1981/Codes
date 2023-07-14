@@ -1,0 +1,12 @@
+{
+  "myconfig": {
+    "section1": {
+      "title": "title1",
+      "name": "name1"
+    },
+    "section2": {
+      "title": "title2",
+      "name": "name2"
+    }
+  }
+}

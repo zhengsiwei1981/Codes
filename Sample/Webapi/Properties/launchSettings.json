@@ -1,23 +1,19 @@
-﻿{
-  "$schema": "https://json.schemastore.org/launchsettings.json",
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:58926",
-      "sslPort": 44335
-    }
-  },
+{
   "profiles": {
     "Webapi": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
+      "commandLineArgs": "--arg1 arg1val --arg2 arg2val --arg3 arg3val",
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "https://localhost:7036;http://localhost:5257",
+      //使用Kestrel定义的终结点需要增加这行配置
+      //"externalUrlConfiguration": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_TEST": "TEST",
+        "PREFIX_TEST": "TEST2"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7036;http://localhost:5257"
     },
     "IIS Express": {
       "commandName": "IISExpress",
@@ -26,6 +22,15 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:58926",
+      "sslPort": 44335
     }
   }
 }

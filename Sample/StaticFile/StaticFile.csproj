@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="documents\" />
+    <Folder Include="Controllers\" />
   </ItemGroup>
 
 </Project>

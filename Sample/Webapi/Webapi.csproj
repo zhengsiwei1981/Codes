@@ -4,7 +4,18 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="file.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="file.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.2.9" />
@@ -13,6 +24,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.7" />
     <PackageReference Include="Microsoft.Extensions.Caching.SqlServer" Version="7.0.7" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="7.0.7" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="7.0.8" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     <PackageReference Include="System.IO.Abstractions" Version="19.2.29" />
   </ItemGroup>

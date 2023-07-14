@@ -12,7 +12,7 @@ namespace StaticFile
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
+            //builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -32,10 +32,10 @@ namespace StaticFile
             
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            app.UseAuthorization();
+            //app.UseAuthorization();
 
 
-            app.MapControllers();
+            //app.MapControllers();
 
             app.Run();
         }
