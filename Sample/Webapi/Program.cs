@@ -36,7 +36,9 @@ namespace Webapi
             builder.Services.SampleHealthyCheckForBuilder();
             //Cors
             builder.Services.SampleCorsForBuilder();
-
+            //Http Client
+            builder.Services.SampleHttpClientForBuilder();
+            
             builder.Logging.AddTraceSource(new System.Diagnostics.SourceSwitch("default", "all"), new DefaultTraceListener() { LogFileName = "trace.log" }).AddEventSourceLogger();
             //builder.Services.AddW3CLogging(options =>
             //{
@@ -75,6 +77,7 @@ namespace Webapi
                 //写入自定义格式
                 options.InputFormatters.Insert(0, new MyTestInputFormatter());
                 options.OutputFormatters.Insert(0, new MyTestOutputFormatter());
+
                 options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(s => "值不能为空");
                 //options.ModelBinderProviders.Insert(0, new ByteArrayModelBinderProvider());
                 //添加异常过滤
