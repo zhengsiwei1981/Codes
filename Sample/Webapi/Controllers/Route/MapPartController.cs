@@ -27,15 +27,20 @@ namespace Webapi.Controllers.Route
         }
         // GET: api/MapPart?body=1
         [HttpPost]
-        public string Post(string body)
+        public string Detail(string body)
         {
             return body;
         }
         //api/MapPart/detail/1 body
         [HttpPost("detail/{id}")]
-        public ActionResult Post([FromBody] Body body, [FromRoute] int id)
+        public ActionResult Detail([FromBody] Body body, [FromRoute] int id)
         {
             return Content($"body weight:{body.Weight} id:{id}");
+        }
+        [HttpGet("header")]
+        public ActionResult FromHeader([FromHeader] string accept)
+        {
+            return Content(accept);
         }
         //Get,Put,Delete
         [AcceptVerbs("Get", "Put", "Delete")]

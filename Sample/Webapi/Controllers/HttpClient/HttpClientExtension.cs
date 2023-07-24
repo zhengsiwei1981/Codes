@@ -12,6 +12,7 @@ namespace Webapi.MyExtension
             services.AddPolicyRegistry();
             services.AddTransient<SampleHeaderHandler>();
             services.TryAddScoped<IOperationScoped, OperationScoped>();
+
             services.AddHttpClient("test1", client =>
             {
                 client.BaseAddress = new Uri("https://localhost:7036");

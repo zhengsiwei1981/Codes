@@ -38,7 +38,19 @@ namespace Webapi
             builder.Services.SampleCorsForBuilder();
             //Http Client
             builder.Services.SampleHttpClientForBuilder();
-            
+            //Data Protection
+            builder.Services.SampleDataProtection();
+            //Object Pool
+            builder.Services.SampleObjectPool();
+            //Response Cache
+            builder.Services.SampleResponseCacheForBuilder();
+            //Session
+            builder.Services.SampleSessionForBuilder();
+            //Static File
+            builder.Services.SampleStaticFileForBuilder();
+            //Auth
+            builder.Services.SampleAuthencticationForBuilder();
+
             builder.Logging.AddTraceSource(new System.Diagnostics.SourceSwitch("default", "all"), new DefaultTraceListener() { LogFileName = "trace.log" }).AddEventSourceLogger();
             //builder.Services.AddW3CLogging(options =>
             //{
@@ -60,6 +72,8 @@ namespace Webapi
             //增加ini文件
             builder.Configuration.AddIniFile("MyIni.ini", true, reloadOnChange: true);
             builder.Configuration.AddJsonFile("settings.json");
+            
+
             //变更令牌
             //var confiuration = (IConfiguration)builder.Configuration;
             //ChangeToken.OnChange(() => confiuration.GetReloadToken(), () =>
@@ -137,11 +151,11 @@ namespace Webapi
                     return new JsonResult(new { message = $"无效的参数:{sb.ToString()}" });
                 };
             });
-            //静态文件处理
-            builder.Services.AddOptions<StaticFileOptions>().Configure<IHostEnvironment>((op, env) =>
-            {
-                op.FileProvider = new TextFileProvider(env.ContentRootPath);
-            });
+            ////静态文件处理
+            //builder.Services.AddOptions<StaticFileOptions>().Configure<IHostEnvironment>((op, env) =>
+            //{
+            //    op.FileProvider = new TextFileProvider(env.ContentRootPath);
+            //});
             //测试用内存
             builder.Services.AddSingleton<IMemoryCache, MemoryCache>();
             builder.Services.AddSingleton<IFileSystem, FileSystem>();
@@ -195,17 +209,26 @@ namespace Webapi
 
             //app.UseExceptionHandler("/error");
             app.UseRewriter();
-            app.UseStaticFiles();
             //添加Http日志
             //app.UseHttpLogging();
             //app.UseW3CLogging();
             app.UseHttpsRedirection();
-            app.UseAuthorization();
             app.MapControllers();
+
+            //Auth
+            app.SampleAuthencticationForWebAplication();
+            //static file
+            app.SampleStaticFileForWebApplication();
+            //Session
+            app.UseSession();
             //Healthy Check
             app.SampleHealthyCheckForWebApplication();
             //Cors
             app.SampleCorsForWebApplication();
+            //Response Cache
+            app.SampleResponseCacheForWebApplication();
+
+
             //        app.Run(context => context.Response.WriteAsync(
             //$"Rewritten or Redirected Url: " +
             //$"{context.Request.Path + context.Request.QueryString}"));

@@ -10,7 +10,7 @@ namespace Webapi.Controllers.Cache
     {
         /// <summary>
         /// 1.创建sql cache工具：dotnet tool install --global dotnet-sql-cache
-        /// 2.创建缓存表 dotnet sql-cache create "Data Source=.;Initial Catalog=Test;Integrated Security=True;TrustServerCertificate=true" dbo TestCach
+        /// 2.创建缓存表 dotnet sql-cache create "Data Source=.;Initial Catalog=Test;Integrated Security=True;TrustServerCertificate=true" dbo TestCache
         /// 3.在程序内添加访问连结
         /// </summary>
         /// <param name="distributedCache"></param>
