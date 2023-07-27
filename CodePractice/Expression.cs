@@ -18,6 +18,7 @@ namespace ConsoleApp2
             foo.DoSet(f => f.Bar, "bar");
             foo.DoSet(f => f.Bar2, "bar2");
             foo.DoSet(f => f.test, 1);
+            foo.DoSet(f => f.Guid2, Guid.NewGuid().ToString());
         }
     }
     public static class DoSomething
@@ -34,6 +35,8 @@ namespace ConsoleApp2
 
         private static void SetValue<Foo>(Foo? foo, string name, dynamic val)
         {
+            if (val == null)
+                return;
             var paramter = Expression.Parameter(typeof(Foo), "f");
             Expression.Assign(Expression.Property(paramter, name), Expression.Constant(val));
             var expr = Expression.Lambda<Action<Foo>>(Expression.Assign(Expression.Property(paramter, name), Expression.Constant(val)), paramter).Compile();
@@ -53,7 +56,14 @@ namespace ConsoleApp2
                 {
                     return tryval;
                 }
-                return 0;
+            }
+            if (type == typeof(Guid))
+            {
+                var trval = Guid.Empty;
+                if (Guid.TryParse(val.ToString(), out trval))
+                {
+                    return trval;
+                }
             }
             if (type.IsEnum)
             {
@@ -73,6 +83,10 @@ namespace ConsoleApp2
             get; set;
         }
         public int Bar2
+        {
+            get; set;
+        }
+        public Guid Guid2
         {
             get; set;
         }
