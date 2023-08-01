@@ -20,6 +20,7 @@ using System.Text;
 using System.Web.Http.ModelBinding;
 using System.Xml;
 using Webapi;
+using Webapi.Controllers.Authorization;
 using Webapi.Controllers.Configuration;
 using Webapi.Controllers.HandlerError;
 using Webapi.MyExtension;
@@ -50,36 +51,12 @@ namespace Webapi
             builder.Services.SampleStaticFileForBuilder();
             //Auth
             builder.Services.SampleAuthencticationForBuilder();
-
-            builder.Logging.AddTraceSource(new System.Diagnostics.SourceSwitch("default", "all"), new DefaultTraceListener() { LogFileName = "trace.log" }).AddEventSourceLogger();
-            //builder.Services.AddW3CLogging(options =>
-            //{
-            //    options.FileName = "MyLogFile";
-            //    options.LogDirectory = @"C:\Logs";
-            //});
-            //增加新的环境变量前缀
-            builder.Configuration.AddEnvironmentVariables("PREFIX_");
-            //交换机映射,之后可以通过configuration的索引器获取参数
-            var switchMappings = new Dictionary<string, string>()
-                     {
-                         { "--arg1", "arg1" },
-                         { "--arg2", "arg2" },
-                         { "--arg3", "arg3" }
-                     };
-            builder.Configuration.AddCommandLine(args, switchMappings);
-            //增加xml文件
-            builder.Configuration.AddXmlFile("MyXml.xml", true);
-            //增加ini文件
-            builder.Configuration.AddIniFile("MyIni.ini", true, reloadOnChange: true);
-            builder.Configuration.AddJsonFile("settings.json");
-            
-
-            //变更令牌
-            //var confiuration = (IConfiguration)builder.Configuration;
-            //ChangeToken.OnChange(() => confiuration.GetReloadToken(), () =>
-            //{
-            //    Console.WriteLine("has changed");
-            //});
+            //Authorizatioon
+            builder.Services.SampleAuthorizationForService();
+            //Logging
+            builder.SampleLoggingForService();
+            //Configuration
+            builder.SampleConfigurationForService(args);
 
             // Add services to the container.
             builder.Services.AddControllers(options =>
@@ -89,10 +66,9 @@ namespace Webapi
                 options.OutputFormatters.Add(new XmlSerializerOutputFormatter());
 
                 //写入自定义格式
-                options.InputFormatters.Insert(0, new MyTestInputFormatter());
-                options.OutputFormatters.Insert(0, new MyTestOutputFormatter());
+                options.SetCustomerFormatOption();
 
-                options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(s => "值不能为空");
+                //options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(s => "值不能为空");
                 //options.ModelBinderProviders.Insert(0, new ByteArrayModelBinderProvider());
                 //添加异常过滤
                 options.Filters.Add<HttpResponseExceptionFilter>();
@@ -109,16 +85,7 @@ namespace Webapi
                 options.SerializerSettings.Converters.Add(new Webapi.Controllers.ModelBinder.DateTimeConverter());
             });
             builder.Services.Configure<PositionOptions>(builder.Configuration.GetSection("Postion"));
-            //Url重写规则
-            builder.Services.Configure<RewriteOptions>(options =>
-            {
-                //使用自定义的重写规则，除此方法外还可以使用IRule实现相同的功能
-                //options.Add(MethodRules.RewriteTextFileRequests);
 
-                options.AddRedirect("redirect-rule/(.*)", "api/Rewriter/redirected/$1");
-                //尽可能使用，因为匹配规则的计算成本很高，并且会增加应用响应时间。发生匹配时跳过对其余规则的处理，并且不需要其他规则处理
-                options.AddRewrite(@"^sample/(\d+)/(\d+)", "api/Rewriter/rewritten?var1=$1&var2=$2", skipRemainingRules: true);
-            });
             builder.Services.AddSingleton<IFileProvider>(service =>
             {
                 var env = service.GetRequiredService<IHostEnvironment>();
@@ -130,32 +97,8 @@ namespace Webapi
             });
 
             //定义模型规则
-            builder.Services.Configure<ApiBehaviorOptions>(options =>
-            {
-                //禁用默认的无效模型响应器,否则自定义的模型验证将不会起效
-                //options.SuppressModelStateInvalidFilter = true;
-
-                //自定义无效模型响应
-                options.InvalidModelStateResponseFactory = context =>
-                {
-                    var sb = new StringBuilder();
-                    foreach (var key in context.ModelState.Keys)
-                    {
-                        if (context.ModelState[key].Errors.Count > 0)
-                        {
-                            sb.Append(context.ModelState[key].Errors[0].ErrorMessage);
-                            sb.Append(",");
-                        }
-                    }
-                    sb = sb.Remove(sb.Length - 1, 1);
-                    return new JsonResult(new { message = $"无效的参数:{sb.ToString()}" });
-                };
-            });
-            ////静态文件处理
-            //builder.Services.AddOptions<StaticFileOptions>().Configure<IHostEnvironment>((op, env) =>
-            //{
-            //    op.FileProvider = new TextFileProvider(env.ContentRootPath);
-            //});
+            builder.Services.SampleModelValidationForService();
+           
             //测试用内存
             builder.Services.AddSingleton<IMemoryCache, MemoryCache>();
             builder.Services.AddSingleton<IFileSystem, FileSystem>();
@@ -208,7 +151,9 @@ namespace Webapi
             }
 
             //app.UseExceptionHandler("/error");
-            app.UseRewriter();
+
+            //Rewriter
+            app.SampleRewriteForApp();
             //添加Http日志
             //app.UseHttpLogging();
             //app.UseW3CLogging();
@@ -217,6 +162,8 @@ namespace Webapi
 
             //Auth
             app.SampleAuthencticationForWebAplication();
+            //Authorization
+            app.SampleAuthorizationForBuilder();
             //static file
             app.SampleStaticFileForWebApplication();
             //Session
@@ -238,112 +185,7 @@ namespace Webapi
     }
 
     #region 自定义格式化对象
-    public class MyTestInputFormatter : TextInputFormatter
-    {
-        public MyTestInputFormatter()
-        {
-            SupportedMediaTypes.Add(MediaTypeHeaderValue.Parse("text/mytest"));
 
-            SupportedEncodings.Add(Encoding.UTF8);
-            SupportedEncodings.Add(Encoding.Unicode);
-        }
-        public override async Task<InputFormatterResult> ReadRequestBodyAsync(InputFormatterContext context, Encoding encoding)
-        {
-            try
-            {
-                using var reader = new StreamReader(context.HttpContext.Request.Body, encoding);
-                var sb = new StringBuilder();
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<MyTest>>();
-                var line = await ReadLineAsync("Name:", reader, context, logger);
-                sb.Append(line);
-                var line2 = await ReadLineAsync("Value:", reader, context, logger);
-                sb.Append(line2);
-
-                logger.LogInformation(sb.ToString());
-
-                return await InputFormatterResult.SuccessAsync(new MyTest() { Name = line.Replace("Name:", ""), Value = line2.Replace("Value:", "") });
-            }
-            catch
-            {
-                return await InputFormatterResult.FailureAsync();
-            }
-        }
-        private static async Task<string> ReadLineAsync(string expectedText, StreamReader reader, InputFormatterContext context, ILogger logger)
-        {
-            var line = await reader.ReadLineAsync();
-
-            if (line is null || !line.StartsWith(expectedText))
-            {
-                var errorMessage = $"Looked for '{expectedText}' and got '{line}'";
-                //context.ModelState.TryAddModelError(context.ModelName, errorMessage);
-                logger.LogError(errorMessage);
-
-                throw new Exception(errorMessage);
-            }
-
-            return line;
-        }
-    }
-    public class MyTestOutputFormatter : TextOutputFormatter
-    {
-        public MyTestOutputFormatter()
-        {
-            SupportedMediaTypes.Add(MediaTypeHeaderValue.Parse("text/mytest"));
-
-            SupportedEncodings.Add(Encoding.UTF8);
-            SupportedEncodings.Add(Encoding.Unicode);
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        protected override bool CanWriteType(Type? type)
-        {
-            return type == typeof(MyTest) || typeof(IEnumerable<MyTest>).IsAssignableFrom(type); ;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="selectedEncoding"></param>
-        /// <returns></returns>
-        public override async Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
-        {
-            if (context.Object is MyTest)
-            {
-                var obj = context.Object as MyTest;
-                string val = "no data";
-                if (obj != null)
-                {
-                    val = $"Name:{obj.Name},Value:{obj.Value}";
-                }
-                await context.HttpContext.Response.WriteAsync(val);
-            }
-            else
-            {
-                var obj = context.Object as IEnumerable<MyTest>;
-                var sb = new StringBuilder();
-                foreach (var test in obj!)
-                {
-                    sb.Append($"Name:{test.Name},Value:{test.Value}");
-                    sb.Append(Environment.NewLine);
-                }
-                await context.HttpContext.Response.WriteAsJsonAsync(sb.ToString());
-            }
-        }
-    }
-    public class MyTest
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Name { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Value { get; set; }
-    }
     #endregion
 
     public static class Extension
@@ -437,47 +279,6 @@ namespace Webapi
         {
             builder.UseMiddleware<RequestFileMiddleware>();
         }
-    }
-
-    public class MethodRules
-    {
-        #region snippet_RedirectXmlFileRequests
-        public static void RedirectXmlFileRequests(RewriteContext context)
-        {
-            var request = context.HttpContext.Request;
-
-            // Because the client is redirecting back to the same app, stop 
-            // processing if the request has already been redirected.
-            if (request.Path.StartsWithSegments(new PathString("/xmlfiles")) ||
-                request.Path.Value == null)
-            {
-                return;
-            }
-
-            if (request.Path.Value.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
-            {
-                var response = context.HttpContext.Response;
-                response.StatusCode = (int)HttpStatusCode.MovedPermanently;
-                context.Result = RuleResult.EndResponse;
-                response.Headers[HeaderNames.Location] =
-                    "/xmlfiles" + request.Path + request.QueryString;
-            }
-        }
-        #endregion
-
-        #region snippet_RewriteTextFileRequests
-        public static void RewriteTextFileRequests(RewriteContext context)
-        {
-            var request = context.HttpContext.Request;
-
-            if (request.Path.Value != null &&
-                request.Path.Value.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-            {
-                context.Result = RuleResult.SkipRemainingRules;
-                request.Path = "/file.txt";
-            }
-        }
-        #endregion
     }
 
     public class TextFileProvider : PhysicalFileProvider, IFileProvider

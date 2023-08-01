@@ -54,7 +54,9 @@ namespace Webapi.Controllers.Authentication
         /// 拒绝访问
         /// </summary>
         /// <returns></returns>
+        [AllowAnonymous]
         [HttpGet("DenyAccess")]
+        [Produces(contentType: "application/json")]
         public IActionResult DenyAccess()
         {
             return Problem("no auth or no login");

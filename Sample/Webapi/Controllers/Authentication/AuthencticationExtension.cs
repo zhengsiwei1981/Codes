@@ -36,6 +36,7 @@ namespace Webapi.MyExtension
             {
                 option.ExpireTimeSpan = TimeSpan.FromMinutes(60);
                 option.LoginPath = "/api/Cookies/DenyAccess";             
+                option.AccessDeniedPath= "/api/Authorization/AccessDenied";
             });
         }
         public static void SampleAuthencticationForWebAplication(this WebApplication app)

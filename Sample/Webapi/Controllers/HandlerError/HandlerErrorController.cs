@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -18,12 +19,14 @@ namespace Webapi.Controllers.HandlerError
         /// <returns></returns>
         [HttpGet]
         [Produces("application/json")]
+        [AllowAnonymous]
         public IActionResult Error()
         {
             var exceptionHandlerFeature = HttpContext.Features.Get<IExceptionHandlerFeature>()!;
             return new JsonResult(new { message = exceptionHandlerFeature.Error.Message});
         }
         [HttpGet("Throw")]
+        [AllowAnonymous]
         public IActionResult Throw()
         {
             throw new Exception();

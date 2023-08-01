@@ -81,7 +81,7 @@ namespace GenericHost
 
             //通过应用程序域捕获未处理的异常
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            //将会捕获每一层代码抛出的异常
+            //将会捕获每一层方法抛出的异常
             AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
             //捕获异步线程中未处理的异常，只对异步线程有效(无法生效)
             //TaskScheduler.UnobservedTaskException += UnobservedTaskExceptionHandler;

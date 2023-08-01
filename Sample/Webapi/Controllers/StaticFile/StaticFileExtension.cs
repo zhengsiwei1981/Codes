@@ -8,10 +8,17 @@ namespace Webapi.MyExtension
     {
         public static void SampleStaticFileForBuilder(this IServiceCollection services)
         {
+            ////静态文件处理
+            //builder.Services.AddOptions<StaticFileOptions>().Configure<IHostEnvironment>((op, env) =>
+            //{
+            //    op.FileProvider = new TextFileProvider(env.ContentRootPath);
+            //});
+
             services.AddOptions<StaticFileOptions>().Configure<IWebHostEnvironment>((option, env) =>
             {
                 //为所有的png图片增加水印
                 option.FileProvider = new MyFileProvider(env.ContentRootPath);
+                
             });
         }
         public static void SampleStaticFileForWebApplication(this WebApplication app)
@@ -47,7 +54,7 @@ namespace Webapi.MyExtension
             var FileInfo = new FileInfo(fullPath);
             if (!FileInfo.Exists)
                 throw new FileNotFoundException(fullPath);
-            
+
             if (FileInfo.Extension == ".png")
             {
                 if (string.IsInterned(FileInfo.Name) == null)
